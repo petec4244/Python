@@ -1,0 +1,43 @@
+import sys
+import sqlite3 as lite
+import string
+import time
+import csv
+
+def SQLstuff(dbName, query, outfile):
+	print("DB = " + dbName + "\nSQL Query = " + query + "\nOutput File = " + outfile+"\n\n\n");
+	con = lite.connect(dbName)
+	cur = con.cursor()
+	cur.execute(query)
+	con.commit()
+	rows = cur.fetchall()
+	f= open(outfile, 'w')
+	for row in rows:
+		s = str(row)
+		s = s.replace(',)', '')
+		s = s.replace('(', '')
+		s = s+'\n'
+		f.write(s)
+	f.close()
+
+def main():
+	startTime = time.time()
+	#you can hard code a DB and query or pass them as arguments
+	#testDB = "path to DB"
+	#testStr = "select or other statement here
+	#testOutputcsv = "file.csv here"
+	#if len(sys.argv) == 1:
+	#	print("###USING DEFAULTS###");
+	#	SQLstuff(testDB, testStr, testOutputcsv)
+	if len(sys.argv) == 4:
+		SQLstuff(sys.argv[1], sys.argv[2], sys.argv[3])
+	else:
+		print("IMPROPER ARGUMENTS!!!\n\n Expected format:\n Database\n Query \n output csv file\n (quotations are your friend)")
+	elapsedTime = time.time() - startTime
+	m, s = divmod(elapsedTime, 60)
+	h, m = divmod(m, 60)
+	print("The operations took: %02d:Hrs, %02d:Mins, %02d:Secs" % (h, m, s))
+	sys.exit()
+	
+if __name__ == "__main__":
+	main()
