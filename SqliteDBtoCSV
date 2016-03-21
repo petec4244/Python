@@ -3,19 +3,43 @@ import sqlite3 as lite
 import string
 import time
 import csv
+import os
+import os.path
+
+def GetTopRow(query):
+	retStr = ""
+	if query.startswith('select distinct * '):
+		print('Unable to get header row from * query')
+		return ''
+	else:
+		query = query.replace('select distinct ', '')
+		splitqry = query.split(' from ', 1)
+		splitColumns = splitqry[0].split(',')
+		for strItem in splitColumns:
+			if ' as ' in strItem:
+				tempStr = strItem.split(' as ')
+				strItem = tempStr[1]
+			if retStr is not "":
+				retStr = retStr + ', ' + strItem
+			else:
+				retStr = strItem
+	retStr = retStr + '\n'
+	return retStr
 
 def SQLstuff(dbName, query, outfile):
+	headerRow = GetTopRow(query)
 	startTime = time.time()
-	print("DB = " + dbName + "\nSQL Query = " + query + "\nOutput File = " + outfile+"\n\n\n");
+	print("DB = " + dbName + "\n\nSQL Query = " + query + "\n\nOutput File = " + outfile+"\n");
 	con = lite.connect(dbName)
 	cur = con.cursor()
 	cur.execute(query)
 	con.commit()
 	rows = cur.fetchall()
 	f= open(outfile, 'w')
+	f.write(headerRow)
 	for row in rows:
 		s = str(row)
-		s = s.replace(',)', '')
+		s = s.replace(')', '')
 		s = s.replace('(', '')
 		s = s+'\n'
 		f.write(s)
@@ -24,19 +48,27 @@ def SQLstuff(dbName, query, outfile):
 	m, s = divmod(elapsedTime, 60)
 	h, m = divmod(m, 60)
 	print("The operations took: %02d:%02d:%02d (H:M:S)" % (h, m, s))
+	print("Finished!")
 
 def main():
 	#you can hard code a DB and query or pass them as arguments
-	#testDB = "path to DB"
-	#testStr = "select or other statement here
-	#testOutputcsv = "file.csv here"
-	#if len(sys.argv) == 1:
-	#	print("###USING DEFAULTS###");
-	#	SQLstuff(testDB, testStr, testOutputcsv)
+	testDB = "path to DB"
+	testStr = "select or other statement here"
+	testOutputcsv = "file.csv here"
 	if len(sys.argv) == 4:
-		SQLstuff(sys.argv[1], sys.argv[2], sys.argv[3])
+		testDB = sys.argv[1]
+		tempStr = sys.argv[2]
+		testOutputcsv = sys.argv[3]
+	if len(sys.argv) == 1:
+		print("\n###USING HARD CODED VALUES###\n")
 	else:
 		print("IMPROPER ARGUMENTS!!!\n\n Expected format:\n Database\n Query \n output csv file\n (quotations are your friend)")
+		
+	if(os.path.isfile(testDB) and os.access(testDB, os.R_OK)):
+		SQLstuff(testDB, tempStr, testOutputcsv)
+	else:
+		print("\n!!!!Database missing or unreadable!!!\n")
+		print("DB Tried: " + str(testDB))
 	sys.exit()
 	
 if __name__ == "__main__":
